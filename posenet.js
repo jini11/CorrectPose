@@ -7,11 +7,13 @@ let pose_status = 2;
 let keep_time = [0, 0, 0];
 let result_message = "";
 
-position = ["코", "왼쪽눈", "오른쪽눈", "왼쪽귀", "오른쪽귀", "왼쪽어깨", "오른쪽어깨", "왼쪽팔꿈치", "오른쪽팔꿈치",
-            "왼쪽손목", "오른쪽손목", "왼쪽골반부위", "오른쪽골반부위", "왼쪽무릎", "오른쪽무릎", "왼쪽발목", "오른쪽발목"];
+//position = ["코", "왼쪽눈", "오른쪽눈", "왼쪽귀", "오른쪽귀", "왼쪽어깨", "오른쪽어깨", "왼쪽팔꿈치", "오른쪽팔꿈치",
+ //           "왼쪽손목", "오른쪽손목", "왼쪽골반부위", "오른쪽골반부위", "왼쪽무릎", "오른쪽무릎", "왼쪽발목", "오른쪽발목"];
 
 // 척추상 : Spine At The Shoulder , 척추중 : Middle Of The Spine , 척추하 : Base Of Spine
-spine_position = ["척추상", "척추중", "척추하", "목"];
+//spine_position = ["척추상", "척추중", "척추하", "목"];
+
+//let spinetopX, spineTopY, spineBottomX, spineBottomY, spineMiddleX, spineMiddleY;
 
 //webcam을 enable하는 코드
 navigator.mediaDevices.getUserMedia({video: true, audio: false}).then(function (stream) {
@@ -33,95 +35,150 @@ posenet.load().then((model) => {
             canvas.height = video.height;
             
             //spineTop
-            leftShoulderX = pose.keypoints[5].position.x;
-            leftShoulderY = pose.keypoints[5].position.y;
-            rightShoulderX = pose.keypoints[6].position.x;
-            rightShoulderY = pose.keypoints[6].position.y;
-            spineTopX = (leftShoulderX + rightShoulderX) / 2;
-            spineTopY = (leftShoulderY + rightShoulderY) / 2;
+            leftShoulder = pose.keypoints[5].position;
+            rightShoulder = pose.keypoints[6].position;
+
+            // leftShoulderX = pose.keypoints[5].position.x;
+            // leftShoulderY = pose.keypoints[5].position.y;
+            // rightShoulderX = pose.keypoints[6].position.x;
+            // rightShoulderY = pose.keypoints[6].position.y;
+            spineTopX = (leftShoulder.x + rightShoulder.x) / 2;
+            spineTopY = (leftShoulder.y + rightShoulder.y) / 2;
             scale = 1;
 
             //spineBottom
-            leftHipX = pose.keypoints[11].position.x;
-            leftHipY = pose.keypoints[11].position.y;
-            rightHipX = pose.keypoints[12].position.x;
-            rightHipY = pose.keypoints[12].position.y;
-            spineBottomX = (leftHipX + rightHipX) / 2;
-            spineBottomY = (leftHipY + rightHipY) / 2;
+            leftHip = pose.keypoints[11].position;
+            rightHip = pose.keypoints[12].position;
+
+            // leftHipX = pose.keypoints[11].position.x;
+            // leftHipY = pose.keypoints[11].position.y;
+            // rightHipX = pose.keypoints[12].position.x;
+            // rightHipY = pose.keypoints[12].position.y;
+            spineBottomX = (leftHip.x + rightHip.x) / 2;
+            spineBottomY = (leftHip.y + rightHip.y) / 2;
 
             //spineMiddle
             spineMiddleX = (spineBottomX + spineTopX) / 2;
             spineMiddleY = (spineBottomY + spineTopY) / 2;            
-                       
+                     
+            spine = [spineTopX, spineTopY, spineBottomX, spineBottomY, spineMiddleX, spineMiddleY];
+
             //spineTop
-            drawPoint(context, spineTopY * scale, spineTopX * scale, 3, color); //////////                      keypoint!!!!!!!!!!!!!!!!!!!
-            drawPoint(context, spineBottomY * scale, spineBottomX * scale, 3, color);
-            drawPoint(context, spineMiddleY * scale, spineMiddleX * scale, 3, color);
+            drawPoint(context, spineTopY, spineTopX, 3, color); //////////                      keypoint!!!!!!!!!!!!!!!!!!!
+            drawPoint(context, spineBottomY, spineBottomX, 3, color);
+            drawPoint(context, spineMiddleY, spineMiddleX, 3, color);
             //spine = [spineTop.position, spineBottom.position];
             //pose.keypoints.push.apply(pose.keypoints, spine); // push.apply -> array + array
             //pose.keypoints = Object.assign(pose.keypoints, spine); // Object.assign -> object + object
             
             
-            
             drawKeypoints(pose.keypoints, 0.6, context);
             drawSkeleton(pose.keypoints, 0.6, context);
 
+            //console.log("spineTop and Bottom differance: " + (spineTopX - spineBottomX)); // -7~-16 -> 15 or 20
+            //console.log("shoulder and ear differance: " + (pose.keypoints[4].position.x - pose.keypoints[6].position.x)); //-1~8 avg: 4? -> 10
+            checkPose(pose, spine);
         });
         requestAnimationFrame(predict); //frame이 들어올 때마다 재귀호출
     }
 });
 
-function check_X(pose) {
-    head = pose.keypoints[0].position; //머리(코)
-    rw = pose.keypoints[10].position; //오른쪽 손목
-    re = pose.keypoints[8].position; //오른쪽 팔꿈치
-    rs = pose.keypoints[6].position; //오른쪽 어깨
-    lw = pose.keypoints[9].position; //왼쪽 손목
-    le = pose.keypoints[7].position; //왼쪽 팔꿈치
-    ls = pose.keypoints[5].position; //왼쪽 어깨
-    b = pose.keypoints[12].position; //body(오른쪽 골반)
-    //골반보다 팔꿈치가 위쪽에 위치, 팔꿈치보다 손목이 위쪽에 위치, 손목보다 머리가 위쪽에 위치
-    if (b.y > le.y && b.y > re.y && le.y > lw.y && re.y > rw.y && lw.y > head.y && rw.y > head.y) {
-        //어깨 안쪽으로 손목이 위치
-        if (rs.x < rw.x || lw.x < ls.x) {
-            r_gradient = -1;
-            l_gradient = 1;
-            if (rw.x - re.x != 0) {
-                r_gradient = (rw.y - re.y) / (rw.x - re.x);
-            }
-            if (lw.x - le.x != 0) {
-                l_gradient = (lw.y - le.y) / (lw.x - le.x);
-            }
-            if (r_gradient < 0 || l_gradient > 0) {
-                return true;
+/* Timer */
+let count_time = setInterval(function () {
+    if (keep_time[pose_status] == 0) {
+        //다른 모션에서 바뀌어 들어옴
+        keep_time[0] = keep_time[1] = keep_time[2] = 0;
+        keep_time[pose_status]++;
+    } else {
+        // if (pose_status == 0)
+        //     window.parent.postMessage({message: `목을 ${keep_time[pose_status]}초 교정하세요.`}, "*");
+        // else if (pose_status == 1)
+        //     window.parent.postMessage({message: `허리를 ${keep_time[pose_status]}초 유지하셨습니다.`}, "*");
+        //else if (pose_status == 2) window.parent.postMessage({message: `정상 자세입니다.`}, "*");
+        // if (keep_time[pose_status] == 10) {
+        //     if (pose_status == 0) {
+        //         if (pose_status == 0) {
+        //             result_message = "거북목이 진행 중";
+        //         } else if (pose_status == 1) {
+        //             result_message = "거북목 심각 상태";
+        //         } else if (pose_status == 2) {
+        //             result_message = "정상";
+        //         }
+        //         clearInterval(count_time);
+        //         window.parent.postMessage(result_message, "*");
+        //     }
+        // }
+        if (pose_status != 2 && keep_time[pose_status] == 10) {
+            if (pose_status == 0) {
+                result_message = "거북목이 진행 중";
             } else {
-                return false;
+                result_message = "거북목 심각 상태";
             }
-        } else {
-            return false;
+            clearInterval(count_time);
+            window.parent.postMessage(result_message, "*");
+        } else if (pose_status == 2 && keep_time[pose_status] == 10) {
+            result_message = "정상";
+            clearInterval(count_time);
+            window.parent.postMessage(result_message, "*");
         }
+        keep_time[pose_status]++; //시간은 항상 세고 있다.
+    }
+}, 1000);
+
+function checkPose(pose, spine) {
+    if(checkNeck25(pose)) {
+        pose_status = 0;
+        //console.log("목 교정");
+    } else if (checkNeck50(pose)) {
+        pose_status = 1;
+    }
+    // else if(checkSpine(spine)) {
+    //     pose_status = 1;
+    //     //console.log("허리 교정");
+    // } 
+    else {
+        pose_status = 2;
+        //console.log("정상 자세");
+    }
+    console.log(pose_status);
+}
+
+function checkNeck(pose) {
+    rightShoulder = pose.keypoints[6].position;
+    rightEar = pose.keypoints[4].position;
+    leftShoulder = pose.keypoints[5].position;
+    leftEar = pose.keypoints[3].position;
+
+    if(Math.abs(rightShoulder.x - rightEar.x) > 100) {
+        return true;
+    } else if(Math.abs(leftShoulder.x - leftEar.x) > 100) {
+        return true;
     } else {
         return false;
     }
 }
 
-function getAverage(pos, n) {
-    x, y = 0, 0
-
-    for(let i=0;i<n;i++) {
-        x += pos[i][0]
-        y += pos[i][1]
-    }
-    return [x/n, y/n];
+function checkNeck25(pose) { 
+    rightShoulder = pose.keypoints[6].position;
+    rightEar = pose.keypoints[4].position;
+    
+    return rightEar.x - rightShoulder.x > 25 && rightEar.x - rightShoulder.x < 50;
 }
 
-function getAverage2([ax, ay], [bx, by]) {
-    x, y = 0, 0;
+function checkNeck50(pose) {
+    rightShoulder = pose.keypoints[6].position;
+    rightEar = pose.keypoints[4].position;
 
-    x = ax + bx;
-    y = ay + by;
+    return rightEar.x - rightShoulder.x >= 50;
+}
 
-    return [x/2, y/2];
+function checkSpine(spine) { // spineTop, spineBottom
+    spineTop = spine[0];
+    spineBottom = spine[2];
+    if(Math.abs(spineTop - spineBottom) > 15) {
+        return true;
+    } else
+        return false;
 }
 
 /* PoseNet을 쓰면서 사용하는 함수들 코드 - 그냥 복사해서 쓰기 */

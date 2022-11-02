@@ -5,7 +5,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-        <title>Title</title>
+        <title>거북목 영상진단</title>
 
         <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0/dist/tf.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/posenet@2.2.2/dist/posenet.min.js"></script>
@@ -34,8 +34,8 @@
     </head>
 
     <body>
-        <h1>OX-Pose</h1>
-        <h1 id="result_label"></h1> 
+        <h1>거북목 영상진단(오른쪽)</h1>
+        <h1 id="result_label" value="">진단을 진행하고 있습니다.(약 10초 소요)</h1> 
 
         <div>
             <video id="video" width="640" height="480" autoplay muted playsinline></video>
@@ -43,5 +43,14 @@
         </div>
 
         <script src="posenet.js"></script>
+        <script type="text/javascript">
+            //window.onmessage = function(e) { // 이것도 됨
+            //    document.getElementById("result_label").innerHTML = e.data;
+            //}
+            window.addEventListener('message', function(e) {
+            
+                document.getElementById('result_label').innerHTML = "진단 결과: " + e.data + "입니다.";
+            });
+        </script>
     </body>
 </html>
